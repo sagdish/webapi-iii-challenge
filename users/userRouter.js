@@ -3,11 +3,12 @@ const express = require('express');
 const router = express.Router();
 const Users = require('./userDb');
 const Posts = require('../posts/postDb')
+const { masterPass } = process.env;
 
 router.post('/', validateUser, (req, res) => {
   const newUser = req.body;
   if (!newUser.name) {
-    res.status(404).json({ message: `please specify a name for new user`});
+    res.status(400).json({ message: `please specify a name for new user`});
   }
   Users.insert(newUser)
     .then(user => {
@@ -30,7 +31,7 @@ router.post('/:id/posts', validateUserId, validatePost, (req, res) => {
 
 });
 
-router.get('/', (req, res) => {
+router.get('/', validateAdmin, (req, res) => {
   Users.get()
     .then(users => {
       res.status(200).json(users);
@@ -135,5 +136,13 @@ function validatePost(req, res, next) {
   } 
   next();
 };
+
+function validateAdmin(req, res, next) {
+  if (req.query.admin === masterPass) {
+    next();
+  } else {
+    res.status(400).json({ message: "Who are you?!" });
+  }
+}
 
 module.exports = router;
